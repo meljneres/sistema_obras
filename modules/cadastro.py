@@ -5,6 +5,8 @@ from database.db_utils import get_db_connection
 from utils.formatters import format_currency_br, format_percentage
 
 
+# modules/cadastro.py
+
 def cadastrar_obra():
     st.header("Cadastro de Nova Obra")
 
@@ -30,15 +32,27 @@ def cadastrar_obra():
     with col2:
         num_medicoes = st.number_input("Número de Medições", min_value=1, value=12)
 
-    # Matriz de valores previstos por descrição e medição
-    st.write("### Valores Previstos por Descrição e Medição")
-
-    if 'df_valores' not in st.session_state:
+    # Reinicializar DataFrame se necessário
+    if 'df_valores' not in st.session_state or st.session_state.df_valores is None:
         st.session_state.df_valores = pd.DataFrame(
             0.0,
             index=range(num_descricoes),
             columns=['Descrição'] + [f'Medição {i + 1}' for i in range(num_medicoes)] + ['Total']
         )
+
+    # Verificar se o número de linhas/colunas mudou
+    current_rows = len(st.session_state.df_valores.index)
+    current_cols = len(st.session_state.df_valores.columns)
+    expected_cols = num_medicoes + 2  # +2 para 'Descrição' e 'Total'
+
+    if current_rows != num_descricoes or current_cols != expected_cols:
+        st.session_state.df_valores = pd.DataFrame(
+            0.0,
+            index=range(num_descricoes),
+            columns=['Descrição'] + [f'Medição {i + 1}' for i in range(num_medicoes)] + ['Total']
+        )
+
+    st.write("### Valores Previstos por Descrição e Medição")
 
     # Input de valores por descrição
     for i in range(num_descricoes):
@@ -66,37 +80,19 @@ def cadastrar_obra():
         st.session_state.df_valores.iloc[i, -1] = total_descricao
         st.write(f"Total desta descrição: {format_currency_br(total_descricao)}")
 
-    # Calcular totais por medição
-    totais_medicoes = st.session_state.df_valores.iloc[:, 1:-1].sum()
-    valor_total_obra = totais_medicoes.sum()
-
     # Mostrar resumo
     st.subheader("Resumo dos Valores")
 
     # Tabela com todas as descrições e medições
-    st.write("### Valores por Descrição e Medição")
     df_display = st.session_state.df_valores.copy()
     for col in df_display.columns:
         if col != 'Descrição':
             df_display[col] = df_display[col].apply(format_currency_br)
     st.dataframe(df_display)
 
-    # Tabela com totais por medição
-    st.write("### Totais por Medição")
-    df_totais = pd.DataFrame({
-        'Medição': [f'Medição {i + 1}' for i in range(num_medicoes)],
-        'Valor Previsto': totais_medicoes,
-        'Percentual': (totais_medicoes / valor_total_obra * 100),
-        'Percentual Acumulado': (totais_medicoes / valor_total_obra * 100).cumsum()
-    })
-
-    df_totais_display = df_totais.copy()
-    df_totais_display['Valor Previsto'] = df_totais_display['Valor Previsto'].apply(format_currency_br)
-    df_totais_display['Percentual'] = df_totais_display['Percentual'].apply(format_percentage)
-    df_totais_display['Percentual Acumulado'] = df_totais_display['Percentual Acumulado'].apply(format_percentage)
-    st.dataframe(df_totais_display)
-
-    st.write(f"### Valor Total da Obra: {format_currency_br(valor_total_obra)}")
+    # Mostrar valor total da obra
+    valor_total = st.session_state.df_valores['Total'].sum()
+    st.write(f"### Valor Total da Obra: {format_currency_br(valor_total)}")
 
     if st.button("Salvar Obra"):
         if not nome or st.session_state.df_valores['Descrição'].isna().all():
@@ -115,7 +111,7 @@ def cadastrar_obra():
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 nome, contrato, ordem_servico, contratante, contratada,
-                valor_total_obra, data_inicio, data_fim, duracao_prevista, num_medicoes
+                valor_total, data_inicio, data_fim, duracao_prevista, num_medicoes
             ))
 
             obra_id = cursor.lastrowid
@@ -138,7 +134,7 @@ def cadastrar_obra():
                 # Inserir medições previstas para cada item
                 for j in range(num_medicoes):
                     valor_previsto = st.session_state.df_valores.iloc[i, j + 1]
-                    percentual = (valor_previsto / valor_total_obra * 100)
+                    percentual = (valor_previsto / valor_total * 100) if valor_total > 0 else 0
 
                     cursor.execute('''
                     INSERT INTO medicoes (
@@ -149,7 +145,13 @@ def cadastrar_obra():
 
             conn.commit()
             st.success("Obra cadastrada com sucesso!")
-            st.session_state.df_valores = None
+
+            # Reinicializar DataFrame para nova obra
+            st.session_state.df_valores = pd.DataFrame(
+                0.0,
+                index=range(num_descricoes),
+                columns=['Descrição'] + [f'Medição {i + 1}' for i in range(num_medicoes)] + ['Total']
+            )
 
         except Exception as e:
             st.error(f"Erro ao cadastrar obra: {str(e)}")

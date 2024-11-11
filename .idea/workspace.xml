@@ -4,16 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="da5408e5-665d-44ba-901f-1e3b3e4c98cd" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="da5408e5-665d-44ba-901f-1e3b3e4c98cd" name="Changes" comment="Versão1">
+      <change afterPath="$PROJECT_DIR$/modules/editar.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/modules/importar.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/database/db_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/database/db_utils.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/modules/cadastro.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/cadastro.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/modules/medicoes.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/medicoes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/relatorios.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/relatorios.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/obras.db" beforeDir="false" afterPath="$PROJECT_DIR$/obras.db" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/formatters.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/formatters.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -23,34 +23,34 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "meljneres"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;meljneres&quot;
   }
-}]]></component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/meljneres/sistema_obras.git",
-    "accountId": "031dc574-7859-420d-b359-9766b980cafc"
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/meljneres/sistema_obras.git&quot;,
+    &quot;accountId&quot;: &quot;031dc574-7859-420d-b359-9766b980cafc&quot;
   }
-}]]></component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 0
-}]]></component>
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 0
+}</component>
   <component name="ProjectId" id="2oZTilYAonsQHXNtSSqlEJvnr11" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "master",
-    "settings.editor.selected.configurable": "preferences.lookFeel"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.lookFeel&quot;
   }
-}]]></component>
+}</component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -67,6 +67,23 @@
       <option name="presentableId" value="Default" />
       <updated>1731076227862</updated>
     </task>
+    <task id="LOCAL-00001" summary="Versão1">
+      <option name="closed" value="true" />
+      <created>1731091231809</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1731091231809</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Versão1">
+      <option name="closed" value="true" />
+      <created>1731091429296</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1731091429296</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -79,5 +96,9 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Versão1" />
+    <option name="LAST_COMMIT_MESSAGE" value="Versão1" />
   </component>
 </project>

@@ -5,13 +5,15 @@ from database.db_utils import get_db_connection
 from utils.formatters import format_currency_br, format_percentage
 
 
+# modules/medicoes.py
+
 def registrar_medicao():
     st.header("Registro de Medição")
 
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Buscar obras
+    # Seleção da obra
     cursor.execute('SELECT id, nome FROM obras')
     obras = cursor.fetchall()
 
@@ -20,84 +22,99 @@ def registrar_medicao():
         conn.close()
         return
 
-    # Seleção da obra
     obras_dict = {obra[0]: obra[1] for obra in obras}
     obra_selecionada = st.selectbox("Selecione a Obra", list(obras_dict.values()))
     obra_id = [k for k, v in obras_dict.items() if v == obra_selecionada][0]
 
-    # Buscar número total de medições e valor total da obra
-    cursor.execute('SELECT num_medicoes, valor_total FROM obras WHERE id = ?', (obra_id,))
-    num_medicoes, valor_total = cursor.fetchone()
+    # Selecionar número da medição
+    cursor.execute('SELECT num_medicoes FROM obras WHERE id = ?', (obra_id,))
+    num_medicoes = cursor.fetchone()[0]
+    numero_medicao = st.selectbox("Selecione o número da medição", range(1, num_medicoes + 1))
 
-    # Permitir selecionar qualquer medição
-    medicoes_disponiveis = list(range(1, num_medicoes + 1))
-    numero_medicao = st.selectbox("Selecione o número da medição", medicoes_disponiveis)
-
-    # Buscar dados da medição
+    # Buscar todos os itens da obra
     cursor.execute('''
-    SELECT id, valor_previsto, valor_realizado, percentual_previsto
-    FROM medicoes
-    WHERE obra_id = ? AND numero_medicao = ?
-    ''', (obra_id, numero_medicao))
+    SELECT 
+        i.id,
+        i.descricao,
+        i.valor_previsto as valor_total_previsto,
+        m.valor_previsto,
+        m.valor_realizado
+    FROM itens_obra i
+    LEFT JOIN medicoes m ON i.id = m.item_id 
+        AND m.numero_medicao = ?
+    WHERE i.obra_id = ?
+    ''', (numero_medicao, obra_id))
 
-    medicao = cursor.fetchone()
+    itens = cursor.fetchall()
 
-    if medicao:
-        medicao_id, valor_previsto, valor_realizado, percentual_previsto = medicao
-
+    if itens:
         st.subheader(f"Medição #{numero_medicao}")
 
-        # Mostrar valor previsto
-        st.write(f"Valor previsto para esta medição: {format_currency_br(valor_previsto)}")
-        st.write(f"Percentual previsto: {format_percentage(percentual_previsto)}")
+        # Criar tabs para cada item
+        item_tabs = st.tabs([f"Item {i + 1}: {item[1]}" for i, item in enumerate(itens)])
 
-        # Input do valor realizado
-        valor_str = st.text_input(
-            "Valor da medição",
-            value=format_currency_br(valor_realizado or 0).replace('R$ ', ''),
-            key=f"med_{medicao_id}"
-        )
+        valores_realizados = {}
 
-        try:
-            valor_realizado = float(valor_str.replace('.', '').replace(',', '.'))
-        except ValueError:
-            valor_realizado = 0.0
+        for idx, (item_tab, item) in enumerate(zip(item_tabs, itens)):
+            with item_tab:
+                item_id, descricao, valor_total, valor_previsto, valor_realizado = item
 
-        # Calcular percentual realizado
-        percentual_realizado = (valor_realizado / valor_total * 100) if valor_total > 0 else 0
+                st.write(f"### {descricao}")
+                st.write(f"Valor total previsto: {format_currency_br(valor_total)}")
+                st.write(f"Valor previsto para esta medição: {format_currency_br(valor_previsto)}")
+
+                valor_str = st.text_input(
+                    "Valor da medição",
+                    value=format_currency_br(valor_realizado or 0).replace('R$ ', ''),
+                    key=f"med_{item_id}"
+                )
+
+                try:
+                    valor = float(valor_str.replace('.', '').replace(',', '.'))
+                except ValueError:
+                    valor = 0.0
+
+                valores_realizados[item_id] = valor
 
         # Mostrar resumo
         st.subheader("Resumo da Medição")
+
+        df_resumo = pd.DataFrame({
+            'Item': [item[1] for item in itens],
+            'Valor Previsto': [item[3] for item in itens],
+            'Valor da Medição': [valores_realizados[item[0]] for item in itens]
+        })
+
+        df_resumo['Desvio'] = df_resumo['Valor da Medição'] - df_resumo['Valor Previsto']
+
+        # Formatar valores
+        df_display = df_resumo.copy()
+        for col in ['Valor Previsto', 'Valor da Medição', 'Desvio']:
+            df_display[col] = df_display[col].apply(format_currency_br)
+
+        st.dataframe(df_display)
+
+        # Mostrar totais
+        total_previsto = df_resumo['Valor Previsto'].sum()
+        total_realizado = df_resumo['Valor da Medição'].sum()
+        total_desvio = total_realizado - total_previsto
+
         col1, col2, col3 = st.columns(3)
-
         with col1:
-            st.metric("Valor Previsto", format_currency_br(valor_previsto))
+            st.metric("Total Previsto", format_currency_br(total_previsto))
         with col2:
-            st.metric("Valor da Medição", format_currency_br(valor_realizado))
+            st.metric("Total Realizado", format_currency_br(total_realizado))
         with col3:
-            desvio = valor_realizado - valor_previsto
-            st.metric("Desvio", format_currency_br(desvio))
-
-        # Mostrar percentuais
-        col1, col2, col3 = st.columns(3)
-
-        with col1:
-            st.metric("% Previsto", format_percentage(percentual_previsto))
-        with col2:
-            st.metric("% Realizado", format_percentage(percentual_realizado))
-        with col3:
-            desvio_perc = percentual_realizado - percentual_previsto
-            st.metric("Desvio %", format_percentage(desvio_perc))
+            st.metric("Desvio Total", format_currency_br(total_desvio))
 
         if st.button("Salvar Medição"):
             try:
-                cursor.execute('''
-                UPDATE medicoes 
-                SET valor_realizado = ?,
-                    percentual_realizado = ?,
-                    data_medicao = ?
-                WHERE id = ?
-                ''', (valor_realizado, percentual_realizado, datetime.now().date(), medicao_id))
+                for item_id, valor_realizado in valores_realizados.items():
+                    cursor.execute('''
+                    INSERT OR REPLACE INTO medicoes (
+                        obra_id, item_id, numero_medicao, valor_realizado, data_medicao
+                    ) VALUES (?, ?, ?, ?, ?)
+                    ''', (obra_id, item_id, numero_medicao, valor_realizado, datetime.now().date()))
 
                 conn.commit()
                 st.success(f"Medição #{numero_medicao} salva com sucesso!")
