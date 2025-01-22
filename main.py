@@ -1,72 +1,120 @@
 import streamlit as st
+import os
 from database.db_utils import create_tables
+from database.init_db import init_database
+from modules.auth import login, logout, check_authentication
 from modules.cadastro import cadastrar_obra
 from modules.medicoes import registrar_medicao
 from modules.relatorios import gerar_relatorios
-from modules.editar import editar_previsoes  # Adicione esta linha
+from modules.edicao import editar_obra
 
-st.set_page_config(page_title="Sistema de Gestão de Obras", layout="wide")
+
+# Configuração da página Streamlit
+st.set_page_config(
+    page_title="Sistema de Gestão de Obras",
+    page_icon="🏗️",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Inicializar o estado da sessão se necessário
+if 'user_id' not in st.session_state:
+    st.session_state.user_id = None
+if 'username' not in st.session_state:
+    st.session_state.username = None
 
 
 def main():
-    st.title("Sistema de Gestão de Obras")
-
-    if 'initialized' not in st.session_state:
+    # Inicializar banco de dados se não existir
+    if not os.path.exists('obras.db'):
         create_tables()
-        st.session_state.initialized = True
+        init_database()
 
-    menu = ["Início", "Cadastro de Obra", "Medições", "Editar Previsões", "Relatórios"]
-    choice = st.sidebar.selectbox("Menu", menu)
+    # Verificar autenticação
+    if not check_authentication():
+        login()
+        return
 
+    # Sidebar com informações do usuário e menu
+    with st.sidebar:
+        st.write(f"👤 Usuário: {st.session_state.username}")
+
+        menu = ["Início", "Cadastro de Obra", "Editar Obra", "Medições", "Relatórios"]
+        choice = st.selectbox("Menu", menu)
+
+        if st.button("Sair"):
+            st.session_state.user_id = None
+            st.session_state.username = None
+            st.rerun()
+
+    # Conteúdo principal baseado na escolha do menu
     if choice == "Início":
-        st.write("""
-        # Bem-vindo ao Sistema de Gestão de Obras
+        st.title("Sistema de Gestão de Obras")
 
-        Este sistema permite:
+        # Dashboard inicial
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write("### Suas Obras Recentes")
+            from database.db_utils import get_db_connection
+            conn = get_db_connection()
+            cursor = conn.cursor()
 
-        - **Cadastro de Obra**: Cadastre uma nova obra com seus itens e previsões
-        - **Medições**: Registre as medições realizadas para cada item
-        - **Editar Previsões**: Ajuste os valores previstos de obras já cadastradas
-        - **Relatórios**: Visualize gráficos e tabelas de acompanhamento
+            try:
+                cursor.execute('''
+                SELECT nome, contrato, data_inicio 
+                FROM obras 
+                WHERE user_id = ? 
+                ORDER BY data_inicio DESC 
+                LIMIT 5
+                ''', (st.session_state.user_id,))
 
-        Selecione uma opção no menu lateral para começar.
-        """)
+                obras = cursor.fetchall()
+                if obras:
+                    for obra in obras:
+                        st.write(f"- {obra[0]} (Contrato: {obra[1]})")
+                else:
+                    st.info("Nenhuma obra cadastrada ainda.")
+            except Exception as e:
+                st.error(f"Erro ao carregar obras: {str(e)}")
+            finally:
+                conn.close()
+
+        with col2:
+            st.write("### Medições Pendentes")
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                cursor.execute('''
+                SELECT o.nome, m.numero_medicao
+                FROM obras o
+                JOIN medicoes m ON o.id = m.obra_id
+                WHERE o.user_id = ? 
+                AND m.valor_realizado IS NULL
+                GROUP BY o.id, m.numero_medicao
+                ORDER BY m.numero_medicao
+                LIMIT 5
+                ''', (st.session_state.user_id,))
+
+                medicoes = cursor.fetchall()
+                if medicoes:
+                    for med in medicoes:
+                        st.write(f"- {med[0]} (Medição {med[1]})")
+                else:
+                    st.info("Nenhuma medição pendente.")
+                conn.close()
+            except Exception as e:
+                st.error(f"Erro ao carregar medições: {str(e)}")
+
     elif choice == "Cadastro de Obra":
-        st.write("""
-        ### Cadastro de Nova Obra
-
-        Nesta página você deve:
-        1. Preencher os dados básicos da obra
-        2. Definir o número de itens e medições
-        3. Cadastrar os valores previstos para cada item
-        4. Salvar a obra
-        """)
         cadastrar_obra()
+
+    elif choice == "Editar Obra":
+        editar_obra()
+
     elif choice == "Medições":
-        st.write("""
-        ### Registro de Medições
-
-        Nesta página você pode:
-        1. Selecionar uma obra cadastrada
-        2. Escolher qual medição deseja registrar
-        3. Informar os valores realizados para cada item
-        4. Salvar a medição
-        """)
         registrar_medicao()
-    elif choice == "Editar Previsões":
-        editar_previsoes()
+
     elif choice == "Relatórios":
-        st.write("""
-        ### Relatórios e Gráficos
-
-        Aqui você encontra:
-        - Tabelas com valores e percentuais
-        - Gráficos de desempenho físico e financeiro
-        - Indicadores de desempenho (IDP)
-        - Análise de aderência ao planejado
-
-        Selecione uma obra para visualizar seus dados.
-        """)
         gerar_relatorios()
 
 
