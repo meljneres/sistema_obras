@@ -75,7 +75,7 @@ def main():
                 else:
                     st.info("Nenhuma obra cadastrada.")
             except Exception as e:
-                st.error(f"Erro ao carregar obras: {str(e)}")
+                st.error(f"Erro ao carregar obras: TESTE {str(e)}")
             finally:
                 conn.close()
 
