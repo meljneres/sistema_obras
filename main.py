@@ -73,7 +73,7 @@ def main():
                     for obra in obras:
                         st.write(f"- {obra[0]} (Contrato: {obra[1]})")
                 else:
-                    st.info("Nenhuma obra cadastrada ainda.")
+                    st.info("Nenhuma obra cadastrada.")
             except Exception as e:
                 st.error(f"Erro ao carregar obras: {str(e)}")
             finally:
